@@ -8,4 +8,4 @@ The ```view.out``` utility is a OpenGL+Glut utility that renders a **col** file.
 For example, below is the results for **c1a0e.bsp** (Test chamber): ![preview](/preview.png)
 
 # Issues
-Maps **c2a2a** and **c3a2c** crash the algorithm: ***Apparently both contain some out-of-bounds indices***! If these are panic-ignored, the first map looks ok.
+Maps **c2a2a** and **c3a2c** appear to have out-of-range indices. These degeneracies are ignored.
