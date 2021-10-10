@@ -461,8 +461,8 @@ void BspExport::visibility(BspData &bspData, int32 brush)
     }
 
     int32 m = 0;
-    if(contents == CONTENTS_EMPTY) m = SUBFACE_EMPTY;
-    else m = SUBFACE_SOLID;
+    if(contents == CONTENTS_SOLID) m = SUBFACE_SOLID;
+    else m = SUBFACE_EMPTY;
 
     int32 lastF = env.brushes[brush].lFaces;
     int32 f = lastF;
