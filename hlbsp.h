@@ -108,7 +108,7 @@ struct ColHeader
 
 struct ColModel
 {
-    int32 hull[3];
+    int32 hull[4];
 };
 
 struct BspData

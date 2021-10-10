@@ -245,6 +245,7 @@ void keyDown(unsigned char key, int x, int y)
         case '1': hull = 0; break;
         case '2': hull = 1; break;
         case '3': hull = 2; break;
+        case '4': hull = 3; break;
     }
 }
 

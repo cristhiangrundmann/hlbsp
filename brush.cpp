@@ -540,14 +540,15 @@ bool BspExport::read_bsp(const char *filename)
         b = env.init_box(min, max);
         env.init_box(min, max);
         env.init_box(min, max);
+        env.init_box(min, max);
 
-        for(int i = 0; i < 3; i++)
+        for(int i = 0; i < 4; i++)
         {
-            proc_bsp(bspData, b+i, bspData.models[m].hull[i+1]);
+            proc_bsp(bspData, b+i, bspData.models[m].hull[i]);
             visibility(bspData, b+i);
         }
 
-        models.push_back({b, b+1, b+2});
+        models.push_back({b, b+1, b+2, b+3});
     }
 
     clock_t time1 = clock();
