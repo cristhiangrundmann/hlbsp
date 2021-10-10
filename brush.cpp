@@ -524,7 +524,8 @@ bool BspExport::read_bsp(const char *filename)
 
     for(int32 m = 0; m < bspData.num_models; m++)
     {
-        vec3 thick = {0, 0, 0};
+        float thickness = 16;
+        vec3 thick = {thickness, thickness, thickness};
         vec3 min = bspData.models[m].min - thick;
         vec3 max = bspData.models[m].max + thick;
 
