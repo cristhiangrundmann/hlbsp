@@ -5,4 +5,4 @@ The ```hlbsp.out``` utility inputs a **bsp** file and outputs a **col** file. Th
 
 The ```view.out``` utility is a OpenGL+Glut utility that renders a **col** file. A camera can be moved through the space with **WASD** (no-clip). The hull (projectile, standing and crouched) can be switched with **123**. The full option decides whether only worldspawn is visible or all the models are. It can be switched with **X**. The camera speed can be doubled and halved, with **+** and **-** respectively. The mouse grab can be turned on/off with **\***.
 
-For example, below is the results for **c1a0.bsp** (Test chamber): ![preview](/preview.png)
+For example, below is the results for **c1a0e.bsp** (Test chamber): ![preview](/preview.png)
