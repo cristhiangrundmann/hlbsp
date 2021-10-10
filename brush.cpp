@@ -423,6 +423,13 @@ void Environment::cut_brush(int32 brush, int32 plane)
 
 void BspExport::proc_bsp(BspData &bspData, int32 brush, int32 clipnode)
 {
+    //??? c2a2a & c3a2c seem to have out of bounds plane indices ???
+    if(bspData.clipnodes[clipnode].plane >= bspData.num_planes)
+    {
+        env.brushes[brush].contents = CONTENTS_DEGENERATE;
+        return;
+    }
+
     env.cut_brush(brush, bspData.clipnodes[clipnode].plane);
 
     for(int32 i = 0; i < 2; i++)
