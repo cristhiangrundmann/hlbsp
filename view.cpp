@@ -66,7 +66,6 @@ void updateCamera()
 
 void draw_face(int32 lastEdge, int32 plane)
 {
-    int32 edge = lastEdge;
 
     glBegin(GL_POLYGON);
 
@@ -79,6 +78,23 @@ void draw_face(int32 lastEdge, int32 plane)
         vec3 c = {(a.x*k + b.x)/(k+1), (a.y*k + b.y)/(k+1), (a.z*k + b.z)/(k+1)};
         glColor3f(c.x, c.y, c.z);
     }
+
+    int32 edge = lastEdge;
+
+    do
+    {
+        int32 v = bsp.env.links[edge].data;
+        vec3 p = bsp.env.vertices[v];
+        glVertex3f(p.x, p.y, p.z);
+        edge = bsp.env.links[edge].lNext;
+    } while(edge != lastEdge);
+
+    glEnd();
+
+    glColor3f(0, 0, 0);
+    glBegin(GL_LINE_STRIP);
+
+    edge = lastEdge;
 
     do
     {
