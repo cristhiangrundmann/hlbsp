@@ -31,5 +31,6 @@
 *.out
 *.app
 
-# Maps
-maps/*
+# Maps & Collision
+*.bsp
+*.col
