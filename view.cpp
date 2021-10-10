@@ -92,7 +92,7 @@ void draw_face(int32 lastEdge, int32 plane)
     glEnd();
 
     glColor3f(0, 0, 0);
-    glBegin(GL_LINE_STRIP);
+    glBegin(GL_LINE_LOOP);
 
     edge = lastEdge;
 
