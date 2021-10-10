@@ -10,8 +10,8 @@ float calc_distance(vec3 point, Plane plane)
 
 int32 Environment::new_vertexNode()
 {
-    vertexTree.push_back({});
-    return vertexTree.size()-1;
+    vertexNodes.push_back({});
+    return vertexNodes.size()-1;
 }
 
 int32 Environment::new_vertex()
@@ -52,8 +52,8 @@ int32 Environment::new_brush()
 
 void Environment::clear()
 {
-    vertexTree.clear();
-    vertexTree.push_back({{nill, nill, nill, nill}});
+    vertexNodes.clear();
+    vertexNodes.push_back({{nill, nill, nill, nill}});
     vertices.clear();
     planes.clear();
     links.clear();
@@ -173,22 +173,22 @@ int32 Environment::add_vertex(vec3 vertex)
 
         if(i == 2 && j == 15)
         {
-            int32 value = vertexTree[node].down[data1];
+            int32 value = vertexNodes[node].down[data1];
             if(value == nill)
             {
                 value = new_vertex();
                 vertices[value] = vertex;
-                vertexTree[node].down[data1] = value;
+                vertexNodes[node].down[data1] = value;
             }
             return value;
         }
 
-        int32 next = vertexTree[node].down[data1];
+        int32 next = vertexNodes[node].down[data1];
         if(next == nill)
         {
             next = new_vertexNode();
-            vertexTree[node].down[data1] = next;
-            vertexTree[next] = {nill, nill, nill, nill};
+            vertexNodes[node].down[data1] = next;
+            vertexNodes[next] = {nill, nill, nill, nill};
         }
         node = next;
     }
@@ -421,9 +421,9 @@ void Environment::cut_brush(int32 brush, int32 plane)
         brushes[brushes[brush].children[i]].lFaces = newFaces[i];
 }
 
-void BspExport::proc_bsp(int32 brush, int32 clipnode)
+void BspExport::proc_bsp(BspData &bspData, int32 brush, int32 clipnode)
 {
-    env.cut_brush(brush, clipnodes[clipnode].plane);
+    env.cut_brush(brush, bspData.clipnodes[clipnode].plane);
 
     for(int32 i = 0; i < 2; i++)
     {
@@ -431,24 +431,24 @@ void BspExport::proc_bsp(int32 brush, int32 clipnode)
 
         if(env.brushes[child].contents == CONTENTS_DEGENERATE) continue;
         
-        int32 next = clipnodes[clipnode].next[i];
+        int32 next = bspData.clipnodes[clipnode].next[i];
         if(next >= 0)
-            proc_bsp(child, next);
+            proc_bsp(bspData, child, next);
         else
             env.brushes[child].contents = next;
     }
 }
 
-void BspExport::visibility_rec(int32 subface, int32 contents)
+void BspExport::visibility_rec(BspData &bspData, int32 subface, int32 contents)
 {
     if(env.subfaces[subface].children[0] == nill)
         env.subfaces[subface].contents |= contents;
     else
         for(int32 i = 0; i < 2; i++)
-            visibility_rec(env.subfaces[subface].children[i], contents);
+            visibility_rec(bspData, env.subfaces[subface].children[i], contents);
 }
 
-void BspExport::visibility(int32 brush)
+void BspExport::visibility(BspData &bspData, int32 brush)
 {
     int32 contents = env.brushes[brush].contents;
     if(contents == CONTENTS_DEGENERATE) return;
@@ -456,7 +456,7 @@ void BspExport::visibility(int32 brush)
     if(contents == 0)
     {
         for(int32 i = 0; i < 2; i++)
-            visibility(env.brushes[brush].children[i]);
+            visibility(bspData, env.brushes[brush].children[i]);
         return;
     }
 
@@ -480,7 +480,7 @@ void BspExport::visibility(int32 brush)
         do
         {
             int32 subface = env.links[s].data;
-            visibility_rec(subface, m);
+            visibility_rec(bspData, subface, m);
             s = env.links[s].lNext;
         } while(s != lastS);
 
@@ -493,51 +493,173 @@ bool BspExport::read_bsp(const char *filename)
     printf("Processing map: %s\n", filename);
     clock_t time0 = clock();
 
+    BspData bspData;
+
     FILE *fp = fopen(filename, "rb");
     if(!fp) return false;
 
     fseek(fp, 0, SEEK_END);
-    bsp_size = ftell(fp);
+    bspData.bsp_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    bsp_data = new char[bsp_size];
-    int k = fread(bsp_data, bsp_size, 1, fp);
+    bspData.bsp_data = new char[bspData.bsp_size];
+    int k = fread(bspData.bsp_data, bspData.bsp_size, 1, fp);
     fclose(fp);
 
-    header =    (HEADER*)bsp_data;
-    planes =    (PLANE*)&bsp_data[header->lump[LUMP_PLANES].pos];
-    models =    (MODEL*)&bsp_data[header->lump[LUMP_MODELS].pos];
-    clipnodes = (CLIPNODE*)&bsp_data[header->lump[LUMP_CLIPNODES].pos];
+    bspData.header =    (HEADER*)bspData.bsp_data;
+    bspData.planes =    (PLANE*)&bspData.bsp_data[bspData.header->lump[LUMP_PLANES].pos];
+    bspData.models =    (MODEL*)&bspData.bsp_data[bspData.header->lump[LUMP_MODELS].pos];
+    bspData.clipnodes = (CLIPNODE*)&bspData.bsp_data[bspData.header->lump[LUMP_CLIPNODES].pos];
 
-    num_planes = header->lump[LUMP_PLANES].size / sizeof(PLANE);
-    num_models = header->lump[LUMP_MODELS].size / sizeof(MODEL);
-    num_clipnodes = header->lump[LUMP_CLIPNODES].size / sizeof(CLIPNODE);
+    bspData.num_planes = bspData.header->lump[LUMP_PLANES].size / sizeof(PLANE);
+    bspData.num_models = bspData.header->lump[LUMP_MODELS].size / sizeof(MODEL);
+    bspData.num_clipnodes = bspData.header->lump[LUMP_CLIPNODES].size / sizeof(CLIPNODE);
 
-    if(header->version != 30) return false;
+    if(bspData.header->version != 30) return false;
 
     env.clear();
+    models.clear();
 
-    for(int i = 0; i < num_planes; i++)
-        env.planes.push_back({planes[i].normal, planes[i].dist});
+    for(int i = 0; i < bspData.num_planes; i++)
+        env.planes.push_back({bspData.planes[i].normal, bspData.planes[i].dist});
 
-    vec3 thick = {0, 0, 0};
-    vec3 min = models[0].min - thick;
-    vec3 max = models[0].max + thick;
-
-    env.init_box(min, max);
-    env.init_box(min, max);
-    env.init_box(min, max);
-    env.init_box(min, max);
-
-    for(int i = 0; i < 4; i++)
+    for(int32 m = 0; m < bspData.num_models; m++)
     {
-        proc_bsp(i, models[0].hull[i]);
-        visibility(i);
+        vec3 thick = {0, 0, 0};
+        vec3 min = bspData.models[m].min - thick;
+        vec3 max = bspData.models[m].max + thick;
+
+        int32 b;
+        b = env.init_box(min, max);
+        env.init_box(min, max);
+        env.init_box(min, max);
+
+        for(int i = 0; i < 3; i++)
+        {
+            proc_bsp(bspData, b+i, bspData.models[m].hull[i+1]);
+            visibility(bspData, b+i);
+        }
+
+        models.push_back({b, b+1, b+2});
     }
 
     clock_t time1 = clock();
     float time_diff = (float)(time1 - time0) / CLOCKS_PER_SEC;
 
     printf("Time: %fs\n", time_diff);
-
+    delete[] bspData.bsp_data;
     return true;
+}
+
+bool BspExport::save_col(const char *filename)
+{
+    printf("Saving collision: %s\n", filename);
+    FILE *fp = fopen(filename, "wb");
+    if(!fp) return false;
+
+    ColHeader header;
+    header.version = 30; //same as half life's bsp's
+
+    int32 cur_pos = sizeof(header);
+    int32 cur_size = sizeof(VertexNode)*env.vertexNodes.size();
+    header.lumps[COLLUMP_VERTEXNODES] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(vec3)*env.vertices.size();
+    header.lumps[COLLUMP_VERTICES] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(Plane)*env.planes.size();
+    header.lumps[COLLUMP_PLANES] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(Link)*env.links.size();
+    header.lumps[COLLUMP_LINKS] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(Face)*env.faces.size();
+    header.lumps[COLLUMP_FACES] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(Subface)*env.subfaces.size();
+    header.lumps[COLLUMP_SUBFACES] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(Brush)*env.brushes.size();
+    header.lumps[COLLUMP_BRUSHES] = {cur_pos, cur_size};
+
+    cur_pos += cur_size;
+    cur_size = sizeof(ColModel)*models.size();
+    header.lumps[COLLUMP_MODELS] = {cur_pos, cur_size};
+
+    if(1 !=  fwrite(&header, sizeof(ColHeader), 1, fp)) return false;
+    if(1 !=  fwrite(env.vertexNodes.data(), sizeof(VertexNode)*env.vertexNodes.size(), 1, fp)) return false;
+    if(1 !=  fwrite(env.vertices.data(), sizeof(vec3)*env.vertices.size(), 1, fp)) return false;
+    if(1 !=  fwrite(env.planes.data(), sizeof(Plane)*env.planes.size(), 1, fp)) return false;
+    if(1 !=  fwrite(env.links.data(), sizeof(Link)*env.links.size(), 1, fp)) return false;
+    if(1 !=  fwrite(env.faces.data(), sizeof(Face)*env.faces.size(), 1, fp)) return false;
+    if(1 !=  fwrite(env.subfaces.data(), sizeof(Subface)*env.subfaces.size(), 1, fp)) return false;
+    if(1 !=  fwrite(env.brushes.data(), sizeof(Brush)*env.brushes.size(), 1, fp)) return false;
+    if(1 !=  fwrite(models.data(), sizeof(ColModel)*models.size(), 1, fp)) return false;
+
+    fclose(fp);
+    return true;
+}
+
+bool BspExport::load_col(const char *filename)
+{
+    printf("Loading collision: %s\n", filename);
+    FILE *fp = fopen(filename, "rb");
+    if(!fp) return false;
+
+    fseek(fp, 0, SEEK_END);
+    int32 size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    char *data = new char[size];
+
+    if(1 != fread(data, size, 1, fp)) return false;
+
+    fclose(fp);
+
+    ColHeader *header = (ColHeader*)data;
+
+    if(header->version != 30) return false;
+
+    env.clear();
+    models.clear();
+
+    int32 cur_pos = header->lumps[COLLUMP_VERTEXNODES].pos;
+    int32 cur_size = header->lumps[COLLUMP_VERTEXNODES].size;
+    env.vertexNodes = vector<VertexNode>((VertexNode*)&data[cur_pos], (VertexNode*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_VERTICES].pos;
+    cur_size = header->lumps[COLLUMP_VERTICES].size;
+    env.vertices = vector<vec3>((vec3*)&data[cur_pos], (vec3*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_PLANES].pos;
+    cur_size = header->lumps[COLLUMP_PLANES].size;
+    env.planes = vector<Plane>((Plane*)&data[cur_pos], (Plane*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_LINKS].pos;
+    cur_size = header->lumps[COLLUMP_LINKS].size;
+    env.links = vector<Link>((Link*)&data[cur_pos], (Link*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_FACES].pos;
+    cur_size = header->lumps[COLLUMP_FACES].size;
+    env.faces = vector<Face>((Face*)&data[cur_pos], (Face*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_SUBFACES].pos;
+    cur_size = header->lumps[COLLUMP_SUBFACES].size;
+    env.subfaces = vector<Subface>((Subface*)&data[cur_pos], (Subface*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_BRUSHES].pos;
+    cur_size = header->lumps[COLLUMP_BRUSHES].size;
+    env.brushes = vector<Brush>((Brush*)&data[cur_pos], (Brush*)&data[cur_pos+cur_size]);
+
+    cur_pos = header->lumps[COLLUMP_MODELS].pos;
+    cur_size = header->lumps[COLLUMP_MODELS].size;
+    models = vector<ColModel>((ColModel*)&data[cur_pos], (ColModel*)&data[cur_pos+cur_size]);
+
+    delete[] data;
+    return true;   
 }

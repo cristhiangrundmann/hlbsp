@@ -84,10 +84,35 @@ struct PLANE
     int32_t type;
 };
 
-struct BspExport
+struct ColLump
 {
-    Environment env;
+    int32 pos;
+    int32 size;
+};
 
+#define COLLUMP_VERTEXNODES 0
+#define COLLUMP_VERTICES    1
+#define COLLUMP_PLANES      2
+#define COLLUMP_LINKS       3
+#define COLLUMP_FACES       4
+#define COLLUMP_SUBFACES    5
+#define COLLUMP_BRUSHES     6
+#define COLLUMP_MODELS      7
+#define COLHEADER_LUMPS     8
+
+struct ColHeader
+{
+    int32 version;
+    ColLump lumps[COLHEADER_LUMPS];
+};
+
+struct ColModel
+{
+    int32 hull[3];
+};
+
+struct BspData
+{
     int bsp_size;
     char *bsp_data;
 
@@ -100,11 +125,19 @@ struct BspExport
     PLANE *planes;
     MODEL *models;
     CLIPNODE *clipnodes;
+};
 
-    void proc_bsp(int32 brush, int32 clipnode);
-    void visibility(int32 brush);
-    void visibility_rec(int32 subface, int32 contents);
+struct BspExport
+{
+    Environment env;
+    vector<ColModel> models;
+
+    void proc_bsp(BspData &bspData, int32 brush, int32 clipnode);
+    void visibility(BspData &bspData, int32 brush);
+    void visibility_rec(BspData &bspData, int32 subface, int32 contents);
     bool read_bsp(const char *filename);
+    bool save_col(const char *filename);
+    bool load_col(const char *filename);
 };
 
 

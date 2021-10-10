@@ -55,7 +55,7 @@ struct Brush
 
 struct Environment
 {
-    vector<VertexNode> vertexTree;
+    vector<VertexNode> vertexNodes;
     vector<vec3> vertices;
     vector<Plane> planes;
     vector<Link> links;
@@ -81,9 +81,6 @@ struct Environment
     void cut_face(int32 lastLink, int32 newLinks[2], int32 newVertices[2], int32 plane);
     void cut_subface(int32 *link[2], int32 subface, int32 plane);
     void cut_brush(int32 brush, int32 plane);
-
-    bool save(const char *filename);
-    bool load(const char *filename);
 };
 
 #endif

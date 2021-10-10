@@ -1,15 +1,15 @@
-.phony: all view
+.phony: all view hlbsp
 
-all: view
+all: hlbsp.out view.out
 
-test.out: test.cpp brush.cpp brush.h hlbsp.h
-	g++ test.cpp brush.cpp -g -o test.out
-
-view: view.out
-	./view.out maps/c1a0.bsp
+hlbsp.out: hlbsp.o brush.o 
+	g++ hlbsp.o brush.o -O3 -o hlbsp.out
 
 view.out: view.o brush.o
 	g++ view.o brush.o -O3 -o view.out -lm -lGL -lGLU -lglut
+
+hlbsp.o: hlbsp.cpp brush.h hlbsp.h
+	g++ hlbsp.cpp -c -O3 -o hlbsp.o
 
 brush.o: brush.cpp brush.h hlbsp.h
 	g++ brush.cpp -c -O3 -o brush.o

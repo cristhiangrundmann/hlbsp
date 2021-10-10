@@ -40,6 +40,7 @@ int nKeys = 0;
 
 int hull = 0;
 bool side = true;
+bool full = true;
 BspExport bsp;
 
 void updateCamera()
@@ -154,7 +155,11 @@ void display()
     srand(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    display_rec(hull);
+    for(int32 i = 0; i < bsp.models.size(); i++)
+    {
+        display_rec(bsp.models[i].hull[hull]);
+        if(!full) break;
+    }
 
     glutSwapBuffers();
 }
@@ -219,11 +224,11 @@ void keyDown(unsigned char key, int x, int y)
             break;
         case '+': cameraSpeed *= 2; break;
         case '-': cameraSpeed /= 2; break;
-        case 'm': side = !side; break;
-        case '0': hull = 0; break;
-        case '1': hull = 1; break;
-        case '2': hull = 2; break;
-        case '3': hull = 3; break;
+        case 'x': side = !side; break;
+        case 'f': full = !full; break;
+        case '1': hull = 0; break;
+        case '2': hull = 1; break;
+        case '3': hull = 2; break;
     }
 }
 
@@ -235,7 +240,7 @@ void keyUp(unsigned char key, int x, int y)
 
 int main(int argc, char **argv)
 {
-    bsp.read_bsp(argv[1]);
+    bsp.load_col(argv[1]);
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB | GLUT_MULTISAMPLE);
