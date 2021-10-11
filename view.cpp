@@ -41,6 +41,7 @@ int nKeys = 0;
 int hull = 0;
 bool side = true;
 bool full = true;
+bool wireframe = false;
 BspExport bsp;
 
 void updateCamera()
@@ -96,6 +97,7 @@ void draw_face(int32 lastEdge, int32 plane)
 
     edge = lastEdge;
 
+    if(wireframe)
     do
     {
         int32 v = bsp.env.links[edge].data;
@@ -242,6 +244,7 @@ void keyDown(unsigned char key, int x, int y)
         case '-': cameraSpeed /= 2; break;
         case 'x': side = !side; break;
         case 'f': full = !full; break;
+        case 'r': wireframe = !wireframe; break;
         case '1': hull = 0; break;
         case '2': hull = 1; break;
         case '3': hull = 2; break;
@@ -253,6 +256,15 @@ void keyUp(unsigned char key, int x, int y)
 {
     keys[(int)key] = 0.0f;
     //keydown(key);
+}
+
+void mouse(int button, int state, int x, int y)
+{
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        lookMode = !lookMode;
+        if(lookMode) glutWarpPointer(width/2, height/2);
+    }
 }
 
 int main(int argc, char **argv)
@@ -272,6 +284,8 @@ int main(int argc, char **argv)
     glutIgnoreKeyRepeat(true);
     glutKeyboardFunc(keyDown);
     glutKeyboardUpFunc(keyUp);
+    glutMouseFunc(mouse);
+
 
     for(int i = 0; i < 256; i++) keys[i] = false;
 
