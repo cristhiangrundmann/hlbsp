@@ -1,4 +1,4 @@
-.phony: all view hlbsp
+.phony: all view hlbsp clean purge
 
 all: hlbsp.out view.out
 
@@ -19,3 +19,6 @@ view.o: view.cpp brush.h hlbsp.h
 
 clean:
 	-rm *.o *.out
+
+purge:
+	-rm cols/*
