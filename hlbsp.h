@@ -133,8 +133,6 @@ struct BspExport
     vector<ColModel> models;
 
     void proc_bsp(BspData &bspData, int32 brush, int32 clipnode);
-    void visibility(BspData &bspData, int32 brush);
-    void visibility_rec(BspData &bspData, int32 subface, int32 contents);
     bool read_bsp(const char *filename);
     bool save_col(const char *filename);
     bool load_col(const char *filename);

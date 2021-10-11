@@ -421,6 +421,70 @@ void Environment::cut_brush(int32 brush, int32 plane)
         brushes[brushes[brush].children[i]].lFaces = newFaces[i];
 }
 
+
+void Environment::visibility_simplify()
+{
+    for(int32 i = subfaces.size()-1; i >= 0; i--)
+    {
+        if(subfaces[i].children[0] == nill) continue;
+
+        int32 c[2];
+        for(int32 j = 0; j < 2; j++)
+            c[j] = subfaces[subfaces[i].children[j]].contents;
+
+        if(c[0] == c[1]) subfaces[i].contents = c[0];
+    }
+}
+
+void Environment::visibility_rec(int32 subface, int32 contents)
+{
+    if(subfaces[subface].children[0] == nill)
+        subfaces[subface].contents |= contents;
+    else
+        for(int32 i = 0; i < 2; i++)
+            visibility_rec(subfaces[subface].children[i], contents);
+}
+
+void Environment::visibility(int32 brush)
+{
+    int32 contents = brushes[brush].contents;
+    if(contents == CONTENTS_DEGENERATE) return;
+
+    if(contents == 0)
+    {
+        for(int32 i = 0; i < 2; i++)
+            visibility(brushes[brush].children[i]);
+        return;
+    }
+
+    int32 m = 0;
+    if(contents == CONTENTS_SOLID) m = SUBFACE_SOLID;
+    else m = SUBFACE_EMPTY;
+
+    int32 lastF = brushes[brush].lFaces;
+    int32 f = lastF;
+
+    do
+    {
+        int32 ind = links[f].data;
+        bool sign = ind < 0;
+        int32 face = sign ? ~ind : ind;
+
+        int32 lastS = faces[face].lSubfaces;
+        int32 s = lastS;
+
+        if(s != nill)
+        do
+        {
+            int32 subface = links[s].data;
+            visibility_rec(subface, m);
+            s = links[s].lNext;
+        } while(s != lastS);
+
+        f = links[f].lNext;
+    } while(f != lastF);
+}
+
 void BspExport::proc_bsp(BspData &bspData, int32 brush, int32 clipnode)
 {
     //??? c2a2a & c3a2c seem to have out of bounds plane indices ???
@@ -444,55 +508,6 @@ void BspExport::proc_bsp(BspData &bspData, int32 brush, int32 clipnode)
         else
             env.brushes[child].contents = next;
     }
-}
-
-void BspExport::visibility_rec(BspData &bspData, int32 subface, int32 contents)
-{
-    if(env.subfaces[subface].children[0] == nill)
-        env.subfaces[subface].contents |= contents;
-    else
-        for(int32 i = 0; i < 2; i++)
-            visibility_rec(bspData, env.subfaces[subface].children[i], contents);
-}
-
-void BspExport::visibility(BspData &bspData, int32 brush)
-{
-    int32 contents = env.brushes[brush].contents;
-    if(contents == CONTENTS_DEGENERATE) return;
-
-    if(contents == 0)
-    {
-        for(int32 i = 0; i < 2; i++)
-            visibility(bspData, env.brushes[brush].children[i]);
-        return;
-    }
-
-    int32 m = 0;
-    if(contents == CONTENTS_SOLID) m = SUBFACE_SOLID;
-    else m = SUBFACE_EMPTY;
-
-    int32 lastF = env.brushes[brush].lFaces;
-    int32 f = lastF;
-
-    do
-    {
-        int32 ind = env.links[f].data;
-        bool sign = ind < 0;
-        int32 face = sign ? ~ind : ind;
-
-        int32 lastS = env.faces[face].lSubfaces;
-        int32 s = lastS;
-
-        if(s != nill)
-        do
-        {
-            int32 subface = env.links[s].data;
-            visibility_rec(bspData, subface, m);
-            s = env.links[s].lNext;
-        } while(s != lastS);
-
-        f = env.links[f].lNext;
-    } while(f != lastF);
 }
 
 bool BspExport::read_bsp(const char *filename)
@@ -545,11 +560,13 @@ bool BspExport::read_bsp(const char *filename)
         for(int i = 0; i < 4; i++)
         {
             proc_bsp(bspData, b+i, bspData.models[m].hull[i]);
-            visibility(bspData, b+i);
+            env.visibility(b+i);
         }
 
         models.push_back({b, b+1, b+2, b+3});
     }
+
+    env.visibility_simplify();
 
     clock_t time1 = clock();
     float time_diff = (float)(time1 - time0) / CLOCKS_PER_SEC;

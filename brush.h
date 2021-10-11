@@ -81,6 +81,10 @@ struct Environment
     void cut_face(int32 lastLink, int32 newLinks[2], int32 newVertices[2], int32 plane);
     void cut_subface(int32 *link[2], int32 subface, int32 plane);
     void cut_brush(int32 brush, int32 plane);
+
+    void visibility(int32 brush);
+    void visibility_rec(int32 subface, int32 contents);
+    void visibility_simplify();
 };
 
 #endif
