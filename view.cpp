@@ -65,13 +65,13 @@ void updateCamera()
         cam->up.x, cam->up.y, cam->up.z);
 }
 
-void draw_face(int32 lastEdge, int32 plane)
+void draw_face(int32 lastEdge, int32 plane, bool sign)
 {
 
     glBegin(GL_POLYGON);
 
     vec3 n = bsp.env.planes[plane].normal;
-
+    if(!sign) n *= -1;
     {
         int k = 8;
         vec3 a = {(n.x+1)/2, (n.y+1)/2, (n.z+1)/2};
@@ -109,14 +109,14 @@ void draw_face(int32 lastEdge, int32 plane)
     glEnd();
 }
 
-void draw_subface(int32 subface, int32 plane)
+void draw_subface(int32 subface, int32 plane, bool sign)
 {
     if(bsp.env.subfaces[subface].contents == (SUBFACE_SOLID | SUBFACE_EMPTY))
-        draw_face(bsp.env.subfaces[subface].lEdges, plane);
+        draw_face(bsp.env.subfaces[subface].lEdges, plane, sign);
     else if(bsp.env.subfaces[subface].children[0] != nill)
     {
         for(int32 i = 0; i < 2; i++)
-            draw_subface(bsp.env.subfaces[subface].children[i], plane);
+            draw_subface(bsp.env.subfaces[subface].children[i], plane, sign);
     }
 }
 
@@ -160,7 +160,7 @@ void display_rec(int32 brush)
         do
         {
             int32 subface = bsp.env.links[link2].data;
-            draw_subface(subface, bsp.env.faces[face].plane);
+            draw_subface(subface, bsp.env.faces[face].plane, sign);
             link2 = bsp.env.links[link2].lNext;
         } while(link2 != lastLink2);
 
