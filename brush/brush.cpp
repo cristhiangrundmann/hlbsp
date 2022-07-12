@@ -434,14 +434,16 @@ void processBsp(Environment &env, BspData &bspData)
     for(int i = 0; i < bspData.num_planes; i++)
         env.planes.push_back({bspData.planes[i].normal, bspData.planes[i].dist});
 
-    for(int32_t m = 0; m < bspData.num_models*0+1; m++)
+    for(int32_t m = 0; m < bspData.num_models; m++)
     {
+        Environment::Model model;
         for(int h = 0; h < 4; h++)
         {
-            env.hulls[h] = Brush::initBox(env, bspData.models[m].min, bspData.models[m].max);
-            processBsp2(bspData, env, env.hulls[h], bspData.models[m].hull[h]);
-            env.hulls[h]->paint();
+            model.hulls[h] = Brush::initBox(env, bspData.models[m].min, bspData.models[m].max);
+            processBsp2(bspData, env, model.hulls[h], bspData.models[m].hull[h]);
+            model.hulls[h]->paint();
         }
+        env.models.push_back(model);
     }
 }
 

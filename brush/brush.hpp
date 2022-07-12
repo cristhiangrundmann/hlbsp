@@ -110,6 +110,11 @@ struct Environment
          Node *down[4]{};
     };
 
+    struct Model
+    {
+        Brush *hulls[4]{};
+    };
+
     std::vector<vec3*> vertices;
     std::vector<Link<vec3*>*> edges;
     std::vector<Link<SignedFace>*> signedFaces;
@@ -119,7 +124,7 @@ struct Environment
     std::vector<Node*> nodes;
     Node root{};
 
-    Brush *hulls[4]{};
+    std::vector<Model> models;
 
     vec3 *addVertex(vec3 vertex);
 
